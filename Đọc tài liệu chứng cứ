@@ -1,0 +1,214 @@
+{
+  "WFWorkflowClientRelease": "2.1",
+  "WFWorkflowClientVersion": "1100",
+  "WFWorkflowName": "OCR LiveText → Word + Câu hỏi (Full Rules)",
+  "WFWorkflowIcon": {
+    "WFWorkflowIconGlyphNumber": 59515,
+    "WFWorkflowIconColor": 0
+  },
+  "WFWorkflowActions": [
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.choosefromfiles",
+      "WFWorkflowActionParameters": {
+        "WFChooseFileActionPrompt": "Chọn ảnh/PDF để OCR (đa chọn)",
+        "WFChooseFileActionSelectMultiple": true
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.repeat.each",
+      "WFWorkflowActionParameters": {}
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.gettextfromimage",
+      "WFWorkflowActionParameters": {
+        "WFTextRecognitionLanguages": ["vi-VN"],
+        "WFTextRecognitionCorrectSpelling": true
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+      "WFWorkflowActionParameters": { "WFVariableName": "ThisText" }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.getname",
+      "WFWorkflowActionParameters": {}
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.setvariable",
+      "WFWorkflowActionParameters": { "WFVariableName": "ThisName" }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.text",
+      "WFWorkflowActionParameters": {
+        "WFTextActionText": "=== [[ThisName]] ===\n[[ThisText]]\n"
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+      "WFWorkflowActionParameters": { "WFVariableName": "CombinedText" }
+    },
+
+    /* ---------- RULES: TIỀN TỆ ---------- */
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFCondition": {
+          "Value": "ThisText",
+          "Condition": "Matches",
+          "Pattern": "(?<!\\d)(?:\\d{1,3}(?:[.,]\\d{3})+|\\d+)(?:\\s*(?:đ|đồng|VNĐ))?"
+        },
+        "WFIfTrueActions": [
+          {
+            "WFWorkflowActionIdentifier": "is.workflow.actions.text",
+            "WFWorkflowActionParameters": {
+              "WFTextActionText": "— [[ThisName]] • [Tiền tệ] → \"[[ThisText]]\" — cần xác nhận."
+            }
+          },
+          {
+            "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+            "WFWorkflowActionParameters": { "WFVariableName": "Questions" }
+          }
+        ]
+      }
+    },
+
+    /* ---------- RULES: NGÀY THÁNG ---------- */
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFCondition": {
+          "Value": "ThisText",
+          "Condition": "Matches",
+          "Pattern": "(\\d{1,2})[/-](\\d{1,2})[/-](\\d{2,4})|ngày\\s+\\d{1,2}\\s+tháng\\s+\\d{1,2}\\s+năm\\s+\\d{4}"
+        },
+        "WFIfTrueActions": [
+          {
+            "WFWorkflowActionIdentifier": "is.workflow.actions.text",
+            "WFWorkflowActionParameters": {
+              "WFTextActionText": "— [[ThisName]] • [Ngày tháng] → \"[[ThisText]]\" — cần xác nhận."
+            }
+          },
+          {
+            "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+            "WFWorkflowActionParameters": { "WFVariableName": "Questions" }
+          }
+        ]
+      }
+    },
+
+    /* ---------- RULES: SỐ HIỆU VĂN BẢN/VỤ ÁN ---------- */
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFCondition": {
+          "Value": "ThisText",
+          "Condition": "Matches",
+          "Pattern": "Số:\\s*\\d{1,4}/[A-ZĐ\\-–—]{2,10}|\\b\\d{1,4}/\\d{4}/[A-ZĐ\\-–—]{2,10}\\b"
+        },
+        "WFIfTrueActions": [
+          {
+            "WFWorkflowActionIdentifier": "is.workflow.actions.text",
+            "WFWorkflowActionParameters": {
+              "WFTextActionText": "— [[ThisName]] • [Số hiệu] → \"[[ThisText]]\" — cần xác nhận."
+            }
+          },
+          {
+            "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+            "WFWorkflowActionParameters": { "WFVariableName": "Questions" }
+          }
+        ]
+      }
+    },
+
+    /* ---------- RULES: LỖI CHÍNH TẢ PHỔ BIẾN ---------- */
+    { "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFCondition": { "Value": "ThisText", "Condition": "Contains", "String": "sô tiên" },
+        "WFIfTrueActions": [
+          { "WFWorkflowActionIdentifier": "is.workflow.actions.text",
+            "WFWorkflowActionParameters": { "WFTextActionText": "— [[ThisName]] • [Chính tả] \"sô tiên\" → \"số tiền\" — cần sửa." } },
+          { "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+            "WFWorkflowActionParameters": { "WFVariableName": "Questions" } }
+        ]
+      }
+    },
+    { "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFCondition": { "Value": "ThisText", "Condition": "Contains", "String": "chạm trả" },
+        "WFIfTrueActions": [
+          { "WFWorkflowActionIdentifier": "is.workflow.actions.text",
+            "WFWorkflowActionParameters": { "WFTextActionText": "— [[ThisName]] • [Chính tả] \"chạm trả\" → \"chậm trả\" — cần sửa." } },
+          { "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+            "WFWorkflowActionParameters": { "WFVariableName": "Questions" } }
+        ]
+      }
+    },
+    { "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFCondition": { "Value": "ThisText", "Condition": "Contains", "String": "đông" },
+        "WFIfTrueActions": [
+          { "WFWorkflowActionIdentifier": "is.workflow.actions.text",
+            "WFWorkflowActionParameters": { "WFTextActionText": "— [[ThisName]] • [Chính tả] \"đông\" → \"đồng\" (ngữ cảnh tiền tệ) — cần xác nhận." } },
+          { "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+            "WFWorkflowActionParameters": { "WFVariableName": "Questions" } }
+        ]
+      }
+    },
+    { "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFCondition": { "Value": "ThisText", "Condition": "Matches", "Pattern": "\\bTÒÀ\\b|\\bTòà\\b|Tòà" },
+        "WFIfTrueActions": [
+          { "WFWorkflowActionIdentifier": "is.workflow.actions.text",
+            "WFWorkflowActionParameters": { "WFTextActionText": "— [[ThisName]] • [Chính tả] \"TÒÀ/Tòà/Tòà\" → \"TÒA/Tòa\" — cần sửa." } },
+          { "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+            "WFWorkflowActionParameters": { "WFVariableName": "Questions" } }
+        ]
+      }
+    },
+    { "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFCondition": { "Value": "ThisText", "Condition": "Contains", "String": "Vâp" },
+        "WFIfTrueActions": [
+          { "WFWorkflowActionIdentifier": "is.workflow.actions.text",
+            "WFWorkflowActionParameters": { "WFTextActionText": "— [[ThisName]] • [Chính tả] \"Vâp\" → \"Vấp\" — cần sửa." } },
+          { "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+            "WFWorkflowActionParameters": { "WFVariableName": "Questions" } }
+        ]
+      }
+    },
+    { "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFCondition": { "Value": "ThisText", "Condition": "Contains", "String": "kiêm sát" },
+        "WFIfTrueActions": [
+          { "WFWorkflowActionIdentifier": "is.workflow.actions.text",
+            "WFWorkflowActionParameters": { "WFTextActionText": "— [[ThisName]] • [Chính tả] \"kiêm sát\" → \"kiểm sát\" — cần sửa." } },
+          { "WFWorkflowActionIdentifier": "is.workflow.actions.appendvariable",
+            "WFWorkflowActionParameters": { "WFVariableName": "Questions" } }
+        ]
+      }
+    },
+
+    /* ---------- KẾT THÚC LẶP ---------- */
+    { "WFWorkflowActionIdentifier": "is.workflow.actions.endrepeat" },
+
+    /* ---------- LƯU FILE RA THƯ MỤC (HỎI NƠI LƯU) ---------- */
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.savetofile",
+      "WFWorkflowActionParameters": {
+        "WFInput": { "Type": "Variable", "Value": "CombinedText" },
+        "WFFileDestinationPath": "combined.txt",
+        "WFSaveFileOverwrite": true,
+        "WFAskWhereToSave": true
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.savetofile",
+      "WFWorkflowActionParameters": {
+        "WFInput": { "Type": "Variable", "Value": "Questions" },
+        "WFFileDestinationPath": "Cau_hoi_can_lam_ro.txt",
+        "WFSaveFileOverwrite": true,
+        "WFAskWhereToSave": true
+      }
+    }
+  ]
+}
